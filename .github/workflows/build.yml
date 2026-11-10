@@ -40,15 +40,40 @@ jobs:
           packages: 'platform-tools platforms;android-37.0'
 
       - name: Verify Android SDK
-        shell: bash
         run: |
           set -euo pipefail
           sdkmanager --version
           test -d "$ANDROID_HOME/platforms/android-37.0"
-          echo "Android API 37.0 verified."
+          echo "API 37 verified."
 
-      # Install trusted Gradle distribution directly.
-      # The repository's unverified wrapper JAR is never executed.
+      - name: Validate Android XML Resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+          import xml.etree.ElementTree as ET
+
+          root = Path("app/src")
+          files = sorted(root.rglob("*.xml"))
+          errors = []
+
+          for file in files:
+              try:
+                  ET.parse(file)
+              except ET.ParseError as exc:
+                  errors.append(f"{file}: {exc}")
+
+          if errors:
+              print("ANDROID XML VALIDATION FAILED")
+              for error in errors:
+                  print(" -", error)
+              sys.exit(1)
+
+          print(f"XML validation passed: {len(files)} files")
+          PY
+
       - name: Setup Trusted Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
@@ -58,16 +83,12 @@ jobs:
 
       - name: Verify Build Environment
         run: |
-          set -euo pipefail
           java -version
           gradle --version
-          command -v gradle
 
       - name: Build Debug and Release APKs
         run: |
-          gradle \
-            --no-daemon \
-            --stacktrace \
+          gradle --no-daemon --stacktrace \
             assembleDebug assembleRelease
 
       - name: Collect APK Artifacts
@@ -87,10 +108,7 @@ jobs:
             done < <(find "$DIR" -type f -name '*.apk' -print0)
           done
 
-          [[ "$COUNT" -gt 0 ]] || {
-            echo "No APK artifacts found."
-            exit 1
-          }
+          [[ "$COUNT" -gt 0 ]] || exit 1
 
           sha256sum dist/*.apk
           ls -lh dist/
@@ -113,11 +131,10 @@ jobs:
           name: "Mikasa Gallery v1.0.${{ github.run_number }} — AMOLED Yellow Edition"
           body: |
             ## Mikasa Gallery
-
-            - Pure AMOLED Pitch Black (#000000)
+            - AMOLED Pitch Black (#000000)
             - Onyx Yellow (#FFD600)
             - YTX Liquid Glass Navigation
-            - Automated Android APK builds
+            - Automated APK build
           files: dist/*.apk
           generate_release_notes: true
           overwrite_files: true

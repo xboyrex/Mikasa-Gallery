@@ -43,6 +43,33 @@ jobs:
           sdkmanager --version
           test -d "$ANDROID_HOME/platforms/android-37.0"
 
+      - name: Validate Android XML Resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+          import xml.etree.ElementTree as ET
+
+          files = sorted(Path("app/src").rglob("*.xml"))
+          errors = []
+
+          for file in files:
+              try:
+                  ET.parse(file)
+              except ET.ParseError as exc:
+                  errors.append(f"{file}: {exc}")
+
+          if errors:
+              print("ANDROID XML VALIDATION FAILED")
+              for error in errors:
+                  print(" -", error)
+              sys.exit(1)
+
+          print(f"XML validation passed: {len(files)} files")
+          PY
+
       - name: Setup Trusted Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
@@ -59,7 +86,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-
           COUNT=0
 
           if [[ -d app/build/outputs/apk/release ]]; then
@@ -72,13 +98,8 @@ jobs:
             )
           fi
 
-          [[ "$COUNT" -gt 0 ]] || {
-            echo "Release APK not generated."
-            exit 1
-          }
-
+          [[ "$COUNT" -gt 0 ]] || exit 1
           sha256sum dist/*.apk
-          ls -lh dist/
 
       - name: Publish Tagged Release
         uses: softprops/action-gh-release@v3

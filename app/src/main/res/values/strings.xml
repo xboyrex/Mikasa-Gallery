@@ -2,7 +2,7 @@
 <resources>
     <!-- App & General -->
     <string name="app_name">Mikasa Gallery</string>
-    <string name="app_description">100% Offline AMOLED Pitch Black & Onyx Yellow Android Gallery with YTX Liquid Glass</string>
+    <string name="app_description">100% Offline AMOLED Pitch Black &amp; Onyx Yellow Android Gallery with YTX Liquid Glass</string>
     <string name="version_format">Version %1$s (Build %2$d)</string>
 
     <!-- Navigation Tabs -->
