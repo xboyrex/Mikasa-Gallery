@@ -132,7 +132,6 @@ fun AboutScreen(
                     Box(
                         modifier = Modifier
                             .size(100.dp)
-                            .pressable()
                             .clip(CircleShape)
                             .clickable {
                                 eggClicks++
@@ -359,7 +358,6 @@ private fun AboutLinkRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .pressable()
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 4.dp),

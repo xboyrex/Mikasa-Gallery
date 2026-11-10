@@ -213,6 +213,7 @@ import androidx.compose.animation.togetherWith
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.iris.gallery.ui.glass.GlassSettings
+import com.iris.gallery.ui.glass.IrisNavTabItem
 import com.iris.gallery.ui.glass.IrisLiquidNavTab
 import com.iris.gallery.ui.glass.LiquidBottomTabs
 import java.io.File
@@ -1919,7 +1920,6 @@ internal fun GalleryScaffold(
             onTabSelected = { handleTabSelected(it) },
             backdrop = navBackdrop,
             tabsCount = visibleTabs.size,
-            accentColor = Color(0xFFFFD600),
             modifier = Modifier
                 .widthIn(max = 460.dp)
                 .padding(horizontal = 20.dp)
@@ -1936,11 +1936,13 @@ internal fun GalleryScaffold(
                 } else tab.icon
                 val label = if (tab == GalleryTab.MEDIA) mediaTabLabel else stringResource(tab.labelRes)
                 IrisLiquidNavTab(
-                    selected = isSelected,
-                    onClick = { handleTabSelected(index) },
-                    icon = icon,
-                    label = label,
-                    accentColor = Color(0xFFFFD600)
+                    item = IrisNavTabItem(
+                        label = label,
+                        icon = icon,
+                        selectedIcon = icon,
+                        selected = isSelected,
+                        onClick = { handleTabSelected(index) }
+                    )
                 )
             }
         }

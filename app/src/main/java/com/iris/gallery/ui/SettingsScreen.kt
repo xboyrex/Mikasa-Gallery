@@ -310,8 +310,8 @@ fun SettingsScreen(
                     SettingsSwitchRow(
                         title = "Liquid Glass Navigation Bar & Surfaces",
                         subtitle = "Enable YTX 3-layer refractive liquid glass lens pill and physics",
-                        checked = GlassSettings.liquidGlassEnabled,
-                        onCheckedChange = { GlassSettings.setLiquidGlass(context, it) }
+                        checked = GlassSettings.enabled,
+                        onCheckedChange = { GlassSettings.updateEnabled(it) }
                     )
 
                     HorizontalDivider(color = Color(0xFF24242C))
@@ -351,7 +351,7 @@ fun SettingsScreen(
                         }
                         Slider(
                             value = GlassSettings.navBarBottomOffsetDp.toFloat(),
-                            onValueChange = { GlassSettings.setNavBarBottomOffset(context, it.roundToInt()) },
+                            onValueChange = { GlassSettings.updateNavBarBottomOffsetDp(it.roundToInt()) },
                             valueRange = 6f..42f
                         )
                     }
@@ -362,7 +362,7 @@ fun SettingsScreen(
                         title = "Use System Font",
                         subtitle = "Switch between YTX rounded heavy typography and device system font",
                         checked = GlassSettings.useSystemFont,
-                        onCheckedChange = { GlassSettings.setSystemFont(context, it) }
+                        onCheckedChange = { GlassSettings.updateUseSystemFont(it) }
                     )
                 }
             }

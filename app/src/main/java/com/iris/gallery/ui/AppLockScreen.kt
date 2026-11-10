@@ -89,17 +89,16 @@ import kotlin.math.roundToInt
 fun isBiometricHardwareAvailable(context: Context): Boolean {
     return runCatching {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val bm = context.getSystemService(android.hardware.biometrics.BiometricManager::class.java)
-            bm?.canAuthenticate(
+            val manager = context.getSystemService(
+                android.hardware.biometrics.BiometricManager::class.java
+            )
+            manager?.canAuthenticate(
                 android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_WEAK or
-                android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_STRONG
+                    android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_STRONG
             ) == android.hardware.biometrics.BiometricManager.BIOMETRIC_SUCCESS
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            @Suppress("DEPRECATION")
-            val fm = context.getSystemService(android.hardware.fingerprint.FingerprintManager::class.java)
-            fm?.isHardwareDetected == true && fm.hasEnrolledFingerprints()
         } else {
-            false
+            // API 28: Let BiometricPrompt determine actual availability.
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
         }
     }.getOrDefault(false)
 }

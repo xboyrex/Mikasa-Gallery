@@ -95,7 +95,6 @@ private fun LibraryCard(icon: ImageVector, title: String, subtitle: String, onCl
         border = BorderStroke(1.dp, Color(0xFF24242C)),
         modifier = Modifier
             .fillMaxWidth()
-            .pressable()
     ) {
         Row(
             Modifier.fillMaxWidth().padding(18.dp),
