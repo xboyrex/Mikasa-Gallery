@@ -38,14 +38,14 @@ jobs:
         with:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
-          packages: 'platform-tools platforms;android-37'
+          packages: 'platform-tools platforms;android-37.0'
 
       - name: Verify Android SDK
         shell: bash
         run: |
           set -euo pipefail
           sdkmanager --version
-          test -d "$ANDROID_HOME/platforms/android-37"
+          test -d "$ANDROID_HOME/platforms/android-37.0"
           echo "Android API 37 available."
 
       - name: Setup Gradle
