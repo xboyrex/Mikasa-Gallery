@@ -16,23 +16,22 @@ concurrency:
 
 jobs:
   build:
-    name: Build Mikasa Gallery
+    name: Build Mikasa Gallery APK
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
     steps:
       - name: Checkout Source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Setup JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
 
-      # v4: no obsolete Google SDK "tools" package
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
@@ -46,53 +45,58 @@ jobs:
           set -euo pipefail
           sdkmanager --version
           test -d "$ANDROID_HOME/platforms/android-37.0"
-          echo "Android API 37 available."
+          echo "Android API 37.0 verified."
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+      # Install trusted Gradle distribution directly.
+      # The repository's unverified wrapper JAR is never executed.
+      - name: Setup Trusted Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.7.1'
+          validate-wrappers: false
+          cache-provider: basic
 
-      - name: Verify Java and Gradle
+      - name: Verify Build Environment
         run: |
-          chmod +x gradlew
+          set -euo pipefail
           java -version
-          ./gradlew --version
+          gradle --version
+          command -v gradle
 
-      - name: Build Debug and Release
+      - name: Build Debug and Release APKs
         run: |
-          ./gradlew \
+          gradle \
             --no-daemon \
             --stacktrace \
             assembleDebug assembleRelease
 
-      - name: Collect APKs
+      - name: Collect APK Artifacts
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dist
-
           COUNT=0
 
           for VARIANT in release debug; do
             DIR="app/build/outputs/apk/$VARIANT"
+            [[ -d "$DIR" ]] || continue
 
-            if [[ -d "$DIR" ]]; then
-              while IFS= read -r -d '' APK; do
-                cp "$APK" "dist/${VARIANT}-$(basename "$APK")"
-                COUNT=$((COUNT + 1))
-              done < <(find "$DIR" -type f -name '*.apk' -print0)
-            fi
+            while IFS= read -r -d '' APK; do
+              cp "$APK" "dist/${VARIANT}-$(basename "$APK")"
+              COUNT=$((COUNT + 1))
+            done < <(find "$DIR" -type f -name '*.apk' -print0)
           done
 
-          if [[ "$COUNT" -eq 0 ]]; then
-            echo "No APK files generated."
+          [[ "$COUNT" -gt 0 ]] || {
+            echo "No APK artifacts found."
             exit 1
-          fi
+          }
 
           sha256sum dist/*.apk
           ls -lh dist/
 
       - name: Upload APK Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Mikasa-Gallery-APKs-${{ github.run_number }}
           path: dist/*.apk
@@ -101,7 +105,7 @@ jobs:
 
       - name: Publish GitHub Release
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: v1.0.${{ github.run_number }}
@@ -110,11 +114,10 @@ jobs:
           body: |
             ## Mikasa Gallery
 
-            - AMOLED Pitch Black (#000000)
+            - Pure AMOLED Pitch Black (#000000)
             - Onyx Yellow (#FFD600)
             - YTX Liquid Glass Navigation
-            - Automated Android APK build
+            - Automated Android APK builds
           files: dist/*.apk
-          draft: false
-          prerelease: false
           generate_release_notes: true
+          overwrite_files: true
