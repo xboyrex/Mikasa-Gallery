@@ -1,0 +1,78 @@
+name: Mikasa Gallery | Android CI & Auto-Release
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Publish Mikasa Gallery APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+
+      - name: Build Release & Debug APKs
+        run: ./gradlew assembleRelease assembleDebug --stacktrace --no-daemon
+
+      - name: Prepare Branded APK Artifacts
+        run: |
+          mkdir -p dist
+          REL_APK=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          DBG_APK=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          if [ -n "$REL_APK" ]; then
+            cp "$REL_APK" "dist/Mikasa-Gallery-v1.0.${{ github.run_number }}-AMOLED-Yellow-Release.apk"
+          fi
+          if [ -n "$DBG_APK" ]; then
+            cp "$DBG_APK" "dist/Mikasa-Gallery-v1.0.${{ github.run_number }}-AMOLED-Yellow-Debug.apk"
+          fi
+          ls -lh dist/
+
+      - name: Upload APK Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mikasa-Gallery-APKs-v1.0.${{ github.run_number }}
+          path: dist/*.apk
+          if-no-files-found: error
+
+      - name: Publish GitHub Release (on main/master push)
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: "Mikasa Gallery v1.0.${{ github.run_number }} — AMOLED Pitch Black & Onyx Yellow (Liquid Glass)"
+          body: |
+            ## Mikasa Gallery v1.0.${{ github.run_number }} — AMOLED Pitch Black & Onyx Yellow Edition
+            - **Exclusive Theme**: 100% Pure AMOLED Pitch Black (`#000000`) + Onyx/Solar Yellow (`#FFD600`)
+            - **YTX 3-Layer Refractive Liquid Glass Navigation Bar**: Floating above the footer with drag-to-switch lens pill, spring physics, and haptic feedback
+            - **Smooth Open, Close & Transition Animations**: Custom Activity launch/exit transitions + spring-physics `PhotoViewer`, `Albums`, `Settings`, and `About` transitions
+            - **Built by**: [Mayank (@xboyrex)](https://github.com/xboyrex)
+          files: dist/*.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
